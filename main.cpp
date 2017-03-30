@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
 	//	}
 	//}
 	CLogger::Instance().EnableLogs();
-	srand((unsigned int)time(NULL));
+	srand((uint)time(NULL));
 	CGwintGame game;
 	game.Start();
 	return 0;

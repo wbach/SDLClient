@@ -1,4 +1,6 @@
 #include "Gwint.h"
+#include "Network/SDLClientGetway.h"
+#include "Messages/Messages.h"
 
 void CGwintGame::Start()
 {
@@ -27,13 +29,10 @@ void CGwintGame::Start()
 		for (const auto& card : decks.second)
 		{
 			scene->player.cards_in_deck.push_back(card);
-			scene->player.cards_in_deck.push_back(card);
-			scene->player.cards_in_deck.push_back(card);
-			scene->enemy.cards_in_hand.push_back(card);
-			scene->enemy.cards_in_hand.push_back(card);
-			scene->enemy.cards_in_hand.push_back(card);
 		}
 	}
+
+	NetworkGetCardsInHand();	
 
 	engine.PreperaScene();
 	engine.GameLoop();
@@ -42,7 +41,7 @@ void CGwintGame::Start()
 void CGwintGame::NetworkStartProcedure()
 {	
 	std::cout << "Connecting to server..." << std::endl;
-	getway.Init();
+	SDLClientGetway::Instance().Init();
 
 	NetworkDownloadDeck();
 	NetworkWaitForStart();	
@@ -55,15 +54,15 @@ void CGwintGame::NetworkDownloadDeck()
 	std::string deck;
 	while (1)
 	{
-		auto response = getway.GetMessage(deck);
+		auto response = SDLClientGetway::Instance().GetMessage(deck);
 		if (response)
 		{
-			std::cout << deck << std::endl;
+			std::cout << deck << std::endl;		
 
 			auto set = GameCards::Instance().LoadCards(DeckType::NORTH, deck);
 			if (set)
 			{
-				getway.SendMessage("DECK_OK");
+				SDLClientGetway::Instance().SendMessage("DECK_OK");
 				break;
 			}
 		}
@@ -76,13 +75,52 @@ void CGwintGame::NetworkWaitForStart()
 	std::cout << "Waiting for start game..." << std::endl;
 	while (1)
 	{
-		auto response = getway.GetMessage(msg);
+		auto response = SDLClientGetway::Instance().GetMessage(msg);
 		if (response)
 		{
 			std::cout << msg << std::endl;
 
 			if (msg == "START_GAME")
 				break;
+		}
+	}
+}
+
+void CGwintGame::NetworkGetCardsInHand()
+{
+	std::string message;
+	if (SDLClientGetway::Instance().GetMessage(message))
+	{
+		if (message == "START_SEND_CARDS_IN_HAND")
+		{
+			while (1)
+			{
+				if (!SDLClientGetway::Instance().GetMessage(message))
+					continue;
+
+				Log("Dwonload cards in hand : " + message);
+
+				if (message == "END_SEND_CARDS_IN_HAND")
+				{
+					SDLClientGetway::Instance().SendMessage("HAND_CARDS_OK");
+					break;
+				}
+				GwentMessages::SwapCardMessage msg;
+				if (msg.Serialized(message))
+				{
+					auto card = scene->player.cards_in_deck[msg.index];
+
+					if (card.name == msg.card_name)
+					{
+						scene->player.cards_in_hand.push_back(card);
+						scene->player.cards_in_deck.erase(scene->player.cards_in_deck.begin() + msg.index);
+					}
+					else
+					{
+						Error("Founded card in deck is diffrent than in message. " + card.name + " != " + msg.card_name);
+					}
+				}
+			}
 		}
 	}
 }

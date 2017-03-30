@@ -13,8 +13,8 @@ private:
 	void NetworkStartProcedure();
 	void NetworkDownloadDeck();
 	void NetworkWaitForStart();
+	void NetworkGetCardsInHand();
 	CGwitRenderer* renderer;
 	GwintGameScene* scene;
-	SDLGetway getway;
 	CEngine engine;
 };

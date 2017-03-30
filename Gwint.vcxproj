@@ -136,6 +136,7 @@
     <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="Gwint.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Network\SDLClientGetway.cpp" />
     <ClCompile Include="States\State.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -145,10 +146,12 @@
     <ClInclude Include="GameLine.h" />
     <ClInclude Include="GameScene.h" />
     <ClInclude Include="Gwint.h" />
-    <ClInclude Include="Network\SDLGetway.h" />
+    <ClInclude Include="Messages\Messages.h" />
+    <ClInclude Include="Network\SDLClientGetway.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="States\ChooseCardState.h" />
+    <ClInclude Include="States\DownloadCardsInHand.h" />
     <ClInclude Include="States\EnemyState.h" />
     <ClInclude Include="States\PlayerMoveState.h" />
     <ClInclude Include="States\State.h" />

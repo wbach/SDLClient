@@ -1,15 +1,14 @@
 #pragma once
 #include "../GameEngine/Scene/Scene.hpp"
 #include "../GameEngine/Engine/Engine.h"
-#include "../GameEngine/Camera/FirstPersonCamera.h"
-#include "States/ChooseCardState.h"
-#include "States/PlayerMoveState.h"
-#include "States/EnemyState.h"
+#include "../GameEngine/Renderers/GUI/Text/GuiText.h"
+#include "States/State.h"
 #include "Renderer.h"
 #include "Player.h"
-#include "Network/SDLGetway.h"
+#include "GameLine.h"
 #include <map>
 
+class CState;
 class GwintGameScene : public CScene
 {
 public:
@@ -29,7 +28,4 @@ public:
 
 	Player player;
 	Player enemy;
-
-//	SDLGetway m_SdlNetGetway;
-	
 };

@@ -27,6 +27,9 @@
     <ClCompile Include="Gwint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Network\SDLClientGetway.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Gwint.h">
@@ -65,7 +68,13 @@
     <ClInclude Include="GameCards.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Network\SDLGetway.h">
+    <ClInclude Include="Network\SDLClientGetway.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Messages\Messages.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="States\DownloadCardsInHand.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

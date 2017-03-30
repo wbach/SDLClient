@@ -1,4 +1,9 @@
 #include "GameScene.h"
+#include "States/ChooseCardState.h"
+#include "States/PlayerMoveState.h"
+#include "States/EnemyState.h"
+#include "../GameEngine/Camera/FirstPersonCamera.h"
+#include "../GameEngine/Renderers/GUI/GuiRenderer.h"
 
 GwintGameScene::GwintGameScene(CEngine & engine)
 	: engine(engine)
@@ -59,18 +64,17 @@ int GwintGameScene::Initialize()
 	m_Camera->SetPitch(0);
 	m_Camera->UpdateViewMatrix();
 
-	for (unsigned int x = 0; x < 10; x++)
-	{
-		auto i = rand() % player.cards_in_deck.size();
-		player.cards_in_hand.push_back(player.cards_in_deck[i]);
-		player.cards_in_hand.push_back(player.cards_in_deck[i]);
+	//for (uint x = 0; x < 10; x++)
+	//{
+	//	auto i = rand() % player.cards_in_deck.size();
+	//	player.cards_in_hand.push_back(player.cards_in_deck[i]);
+	//	player.cards_in_hand.push_back(player.cards_in_deck[i]);
 
-		player.cards_in_hand.push_back(player.cards_in_deck[i]);
-		player.cards_in_hand.push_back(player.cards_in_deck[i]);
-		player.cards_in_deck.erase(player.cards_in_deck.begin() + i);
-	}
+	//	player.cards_in_hand.push_back(player.cards_in_deck[i]);
+	//	player.cards_in_hand.push_back(player.cards_in_deck[i]);
+	//	player.cards_in_deck.erase(player.cards_in_deck.begin() + i);
+	//}
 
-	//m_SdlNetGetway.Init();
 	return 0;
 }
 
@@ -143,11 +147,7 @@ int GwintGameScene::Update()
 		{
 			m_State = std::make_unique<CPlayerMoveState>(player, &engine.m_InputManager, GameLines);
 		}
-
-
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-
 	}
 
 	for (const auto& card : m_State->CardRender())
