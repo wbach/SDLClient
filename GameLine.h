@@ -1,5 +1,5 @@
 #pragma once
-#include "Card.h"
+#include "Cards/Card.h"
 
 class GameLine
 {

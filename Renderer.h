@@ -1,7 +1,7 @@
 #pragma once
-#include "../GameEngine/Renderers/SimpleRenderer.h"
-#include "Card.h"
+#include "Cards/Card.h"
 #include "Player.h"
+#include <Renderers/SimpleRenderer.h>
 
 class CGwitRenderer : public SimpleRenderer
 {

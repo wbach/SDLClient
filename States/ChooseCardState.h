@@ -4,6 +4,7 @@
 #include "../GameLine.h"
 #include "../Network/SDLClientGetway.h"
 #include "../Messages/Messages.h"
+#include <Input/InputManager.h>
 
 class CChooseCardState : public CState
 {
@@ -36,46 +37,17 @@ public:
 	{
 		if (input_manager->GetKeyDown(KeyCodes::ENTER))
 		{
-			if (player.cards_in_hand.empty() || player.cards_in_deck.empty())
-				return GameStates::END_TURN;
+				//remote_swap card
+				int index = selected_nr*-1;
+				auto& card = player.cards_in_hand[index];
 
-			//remote_swap card
-			auto index = selected_nr*-1;
-			auto& card = player.cards_in_hand[index];
+				GwentMessages::SwapCardMessage msg;
+				msg.index = index;
+				msg.card_name = card.name;
 
-			GwentMessages::SwapCardMessage msg;
-			msg.index = index;
-			msg.card_name = card.name;
-
-			SDLClientGetway::Instance().SendMessage(msg.ToString());
-
-			bool wait_for_response = true;
-			while (wait_for_response)
-			{
-				std::string message;
-				if(SDLClientGetway::Instance().GetMessage(message))
-				{
-					GwentMessages::SwapCardMessage msg;
-					if (msg.Serialized(message))
-					{
-						wait_for_response = false;
-
-						auto swaped_card = player.cards_in_deck[msg.index];
-
-						//check card is correct
-						if (swaped_card.name == msg.card_name)
-						{
-							player.cards_in_hand[selected_nr*-1] = swaped_card;
-							player.cards_in_deck[msg.index] = card;
-							swaped_cards++;
-						}
-						else
-						{
-							Error("Wrong swaped card!");
-						}
-					}
-				}
-			}
+				Log("Sending swap card req : \n" + msg.ToString());
+				SDLClientGetway::Instance().SendMessage(msg.ToString());							
+			
 
 			//Local swap card
 			/*auto card = player.cards_in_hand[selected_nr*-1];
@@ -86,7 +58,7 @@ public:
 
 			
 			if( swaped_cards == 2)
-				return GameStates::END_TURN;
+				return GameStates::END_ROUND;
 
 		}
 		if (input_manager->GetKeyDown(KeyCodes::C))

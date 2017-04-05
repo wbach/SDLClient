@@ -1,6 +1,6 @@
 #pragma once
-#include "../../GameEngine/Objects/RenderAble/Entity.h"
-#include "../Card.h"
+#include "../Cards/Card.h"
+#include <Objects/RenderAble/Entity.h>
 
 namespace GameStates
 {
@@ -10,9 +10,9 @@ namespace GameStates
 		CHOOSE_CARDS_START,
 		CHOOSE_CARD_RECOVERY,
 		CHOOSE_CARD_SWAP,
-		PLAYER_TURN,
-		ENEMY_TURN,
-		END_TURN,
+		PLAYER_ROUND,
+		ENEMY_ROUND,
+		END_ROUND,
 		NONE
 	};
 }

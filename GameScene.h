@@ -1,31 +1,55 @@
 #pragma once
-#include "../GameEngine/Scene/Scene.hpp"
-#include "../GameEngine/Engine/Engine.h"
-#include "../GameEngine/Renderers/GUI/Text/GuiText.h"
-#include "States/State.h"
-#include "Renderer.h"
 #include "Player.h"
 #include "GameLine.h"
+#include "Network/NetworkStates.h"
+#include "States/State.h"
+#include <Scene/Scene.hpp>
 #include <map>
+#include <atomic>
 
 class CState;
+class CGuiText;
+class CEngine;
+class CGwitRenderer;
+
 class GwintGameScene : public CScene
 {
 public:
 	GwintGameScene(CEngine& engine);
+	virtual ~GwintGameScene() override;
 	virtual int		Initialize() override;
 	virtual void	PostInitialize() override {};
 	virtual int		Update() override;
-	void RenderLine(const std::map<LineTypes, GameLine>& line) const;
-	void RenderCards(std::list<SCard>& target, const std::vector<SCard>& cards, const glm::vec3& scale) const;	
 
-	CGuiText* guiText;
-	CEngine& engine;
 	CGwitRenderer* renderer;
 	std::map<LineTypes, GameLine> GameLines;
 	std::map<LineTypes, GameLine> EnemyGameLines;
-	std::unique_ptr<CState> m_State;
+	uint TotalScorePlayer, TotalScoreEnemy;
 
 	Player player;
 	Player enemy;
+private:
+	void RenderLine(const std::map<LineTypes, GameLine>& line) const;
+	void RenderCards(std::list<SCard>& target, const std::vector<SCard>& cards, const glm::vec3& scale) const;
+	void RenderScores();
+	void CheckState();
+	void InitGui();
+	void ShowScores(bool show);	
+
+	CGuiText* guiText;
+	CEngine& engine;
+	std::unique_ptr<CState> m_State;
+	std::atomic_bool quit;
+	std::thread m_NetworkMsssagesThread;	
+
+	NetworkState currentNetworState;
+
+	void NetworkCheckMessages();
+	void NetworkProcerdure();
+	void NetworkDownloadDeck();
+	void NetworkGetCardsInHand();
+	void NetworkSwapCards();
+	void NetworkWaitForStart();
+	void NetworEnemyState();
+	void NetworkPlayerState();
 };

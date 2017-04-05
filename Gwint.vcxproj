@@ -90,7 +90,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\Tools\Windows\rapidxml-1.13;..\Tools\Windows\fbx_sdk\include;..\Tools\Windows\Assimp\include;..\Tools\Windows\SDL2-2.0.3\include\;..\Tools\Windows\glm\;..\Tools\Windows;..\Tools\Windows\freeImage;..\Tools\Windows\freetype\include;..\Tools\Windows\GLFW3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Tools\Windows\rapidxml-1.13;..\Tools\Windows\fbx_sdk\include;..\Tools\Windows\Assimp\include;..\Tools\Windows\SDL2-2.0.3\include\;..\Tools\Windows\glm\;..\Tools\Windows;..\Tools\Windows\freeImage;..\Tools\Windows\freetype\include;..\Tools\Windows\GLFW3\include;..\GameEngine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -133,25 +133,30 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Cards\CardReader.cpp" />
+    <ClCompile Include="Cards\GameCards.cpp" />
     <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="Gwint.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Network\NetworkUtils.cpp" />
     <ClCompile Include="Network\SDLClientGetway.cpp" />
     <ClCompile Include="States\State.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Card.h" />
-    <ClInclude Include="CardReader.h" />
-    <ClInclude Include="GameCards.h" />
+    <ClInclude Include="Cards\Card.h" />
+    <ClInclude Include="Cards\CardReader.h" />
+    <ClInclude Include="Cards\GameCards.h" />
     <ClInclude Include="GameLine.h" />
     <ClInclude Include="GameScene.h" />
     <ClInclude Include="Gwint.h" />
     <ClInclude Include="Messages\Messages.h" />
+    <ClInclude Include="Network\NetworkStates.h" />
+    <ClInclude Include="Network\NetworkUtils.h" />
     <ClInclude Include="Network\SDLClientGetway.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="States\ChooseCardState.h" />
-    <ClInclude Include="States\DownloadCardsInHand.h" />
+    <ClInclude Include="States\EnemyMockState.h" />
     <ClInclude Include="States\EnemyState.h" />
     <ClInclude Include="States\PlayerMoveState.h" />
     <ClInclude Include="States\State.h" />

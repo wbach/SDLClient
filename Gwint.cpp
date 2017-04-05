@@ -32,7 +32,6 @@ void CGwintGame::Start()
 		}
 	}
 
-	NetworkGetCardsInHand();	
 
 	engine.PreperaScene();
 	engine.GameLoop();
@@ -42,85 +41,6 @@ void CGwintGame::NetworkStartProcedure()
 {	
 	std::cout << "Connecting to server..." << std::endl;
 	SDLClientGetway::Instance().Init();
-
-	NetworkDownloadDeck();
-	NetworkWaitForStart();	
 }
 
-void CGwintGame::NetworkDownloadDeck()
-{
-	std::cout << "Waiting for deck..." << std::endl;
 
-	std::string deck;
-	while (1)
-	{
-		auto response = SDLClientGetway::Instance().GetMessage(deck);
-		if (response)
-		{
-			std::cout << deck << std::endl;		
-
-			auto set = GameCards::Instance().LoadCards(DeckType::NORTH, deck);
-			if (set)
-			{
-				SDLClientGetway::Instance().SendMessage("DECK_OK");
-				break;
-			}
-		}
-	}
-}
-
-void CGwintGame::NetworkWaitForStart()
-{
-	std::string msg;
-	std::cout << "Waiting for start game..." << std::endl;
-	while (1)
-	{
-		auto response = SDLClientGetway::Instance().GetMessage(msg);
-		if (response)
-		{
-			std::cout << msg << std::endl;
-
-			if (msg == "START_GAME")
-				break;
-		}
-	}
-}
-
-void CGwintGame::NetworkGetCardsInHand()
-{
-	std::string message;
-	if (SDLClientGetway::Instance().GetMessage(message))
-	{
-		if (message == "START_SEND_CARDS_IN_HAND")
-		{
-			while (1)
-			{
-				if (!SDLClientGetway::Instance().GetMessage(message))
-					continue;
-
-				Log("Dwonload cards in hand : " + message);
-
-				if (message == "END_SEND_CARDS_IN_HAND")
-				{
-					SDLClientGetway::Instance().SendMessage("HAND_CARDS_OK");
-					break;
-				}
-				GwentMessages::SwapCardMessage msg;
-				if (msg.Serialized(message))
-				{
-					auto card = scene->player.cards_in_deck[msg.index];
-
-					if (card.name == msg.card_name)
-					{
-						scene->player.cards_in_hand.push_back(card);
-						scene->player.cards_in_deck.erase(scene->player.cards_in_deck.begin() + msg.index);
-					}
-					else
-					{
-						Error("Founded card in deck is diffrent than in message. " + card.name + " != " + msg.card_name);
-					}
-				}
-			}
-		}
-	}
-}

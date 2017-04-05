@@ -30,12 +30,18 @@
     <ClCompile Include="Network\SDLClientGetway.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Cards\CardReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Cards\GameCards.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Network\NetworkUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Gwint.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Card.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GameLine.h">
@@ -50,22 +56,13 @@
     <ClInclude Include="GameScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CardReader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="States\State.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="States\ChooseCardState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="States\EnemyState.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="States\PlayerMoveState.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GameCards.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Network\SDLClientGetway.h">
@@ -74,7 +71,25 @@
     <ClInclude Include="Messages\Messages.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="States\DownloadCardsInHand.h">
+    <ClInclude Include="Cards\Card.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cards\CardReader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Cards\GameCards.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\NetworkUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="States\EnemyMockState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="States\EnemyState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Network\NetworkStates.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

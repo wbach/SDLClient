@@ -10,7 +10,7 @@ public:
 		, input_manager(input_manager)
 		, GameLines(GameLines)
 	{
-		m_GameStateType = GameStates::PLAYER_TURN;
+		m_GameStateType = GameStates::PLAYER_ROUND;
 	}
 
 	virtual void KeyInputDir() override
@@ -33,13 +33,16 @@ public:
 	{
 		if (input_manager->GetKeyDown(KeyCodes::ENTER))
 		{
-			if (player.cards_in_hand.empty())
-				return GameStates::END_TURN;
-
-			auto card = player.cards_in_hand[selected_nr*-1];
-			GameLines[card.type].AddCard(card);
-			player.cards_in_hand.erase(player.cards_in_hand.begin() + (selected_nr*-1));
-			return GameStates::END_TURN;
+			auto index = selected_nr*-1;
+			auto card = player.cards_in_hand[index];
+			GwentMessages::PushCardMessage push_card_mag;
+			push_card_mag.card_name = card.name;
+			push_card_mag.index = index;
+			push_card_mag.player = GwentMessages::Player::PLAYER;
+			push_card_mag.texturePath = card.texture_path;
+			push_card_mag.type = static_cast<int>(card.type);
+			Log("Sending push card req : \n" + push_card_mag.ToString());
+			SDLClientGetway::Instance().SendMessage(push_card_mag.ToString());
 		}
 		return GameStates::NONE;
 	}

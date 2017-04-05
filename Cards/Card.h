@@ -1,6 +1,6 @@
 #pragma once
-#include "../GameEngine/Resources/Textures/Texture.h"
-#include "../GameEngine/Utils/Utils.h"
+#include <Resources/Textures/Texture.h>
+#include <Utils/Utils.h>
 
 static const glm::vec3 hand_card_size(-0.2, -0.5, 1);
 static const glm::vec3 select_card_size(-0.2, -0.5, 1);
@@ -15,15 +15,15 @@ enum class LineTypes
 
 enum class Skills
 {
-	MoraleBoost,
-	ScorchALL,
-	Scorch,
-	Spy,
-	Hero,
-	TightBond,
-	Medic,
-	Agile,
-	Muster
+	MoraleBoost, // daje wszystkim +1 oprocz siebie
+	ScorchALL, // niszczy najsilniejsza na stole
+	Scorch, // niszczy najsilniejsza w swojej lini
+	Spy, // szpieg
+	Hero, // efekty nie dizalaja
+	TightBond, // podwojone gdy obok jest 2 karta
+	Medic, // ozywianie
+	Agile, // archer/ close combat
+	Muster //Przywo³anie z tali 
 };
 
 struct SCard

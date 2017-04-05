@@ -1,19 +1,16 @@
 #pragma once
-#include "../GameEngine/Engine/Engine.h"
 #include "GameLine.h"
 #include "Renderer.h"
 #include "GameScene.h"
-#include "GameCards.h"
+#include "Cards/GameCards.h"
+#include <Engine/Engine.h>
 
 class CGwintGame
 {
 public:
 	void Start();
-private:	
+private:
 	void NetworkStartProcedure();
-	void NetworkDownloadDeck();
-	void NetworkWaitForStart();
-	void NetworkGetCardsInHand();
 	CGwitRenderer* renderer;
 	GwintGameScene* scene;
 	CEngine engine;

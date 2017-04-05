@@ -2,14 +2,19 @@
 #include "States/ChooseCardState.h"
 #include "States/PlayerMoveState.h"
 #include "States/EnemyState.h"
-#include "../GameEngine/Camera/FirstPersonCamera.h"
-#include "../GameEngine/Renderers/GUI/GuiRenderer.h"
+#include "Renderer.h"
+#include <Camera/FirstPersonCamera.h>
+#include <Renderers/GUI/GuiRenderer.h>
+#include <Engine/Engine.h>
+#include <Renderers/GUI/Text/GuiText.h>
 
 GwintGameScene::GwintGameScene(CEngine & engine)
 	: engine(engine)
 	, renderer(nullptr)
+	, quit(false)
 {
 	m_State = std::make_unique<CChooseCardState>(player, &engine.m_InputManager, GameLines);
+
 	GameLines =
 	{
 		{ LineTypes::CLOSE_COMBAT, GameLine(glm::vec3(-.225f, 0.015, .63f)) },
@@ -24,37 +29,13 @@ GwintGameScene::GwintGameScene(CEngine & engine)
 		{ LineTypes::BALIST, GameLine(glm::vec3(-.225f, 0.76, .63f)) }
 	};
 
-	CGUIRenderer* gui_renderer = new CGUIRenderer();
-	guiText = new CGuiText("../Data/GUI/consola.ttf", engine.m_Projection.GetWindowSize());
-	gui_renderer->AddElement(guiText);
+	InitGui();
+}
 
-	SGuiTextElement score;
-	score.text = "Test";
-	score.colour = glm::vec3(0, 162.f / 255.f, 232.f / 255.f);
-
-	score.position = glm::vec2(-0.55, -0.0);
-	guiText->texts["Line_p1"] = score;
-	score.position = glm::vec2(-0.55, -0.3);
-	guiText->texts["Line_p2"] = score;
-	score.position = glm::vec2(-0.55, -0.6);
-	guiText->texts["Line_p3"] = score;
-
-	score.position = glm::vec2(-0.75, -0.15);
-	guiText->texts["Sum_p1"] = score;
-
-	score.position = glm::vec2(-0.75, 0.4);
-	guiText->texts["Sum_e1"] = score;
-
-	score.position = glm::vec2(-0.55, 0.25);
-	guiText->texts["Line_e1"] = score;
-	score.position = glm::vec2(-0.55, 0.55);
-	guiText->texts["Line_e2"] = score;
-	score.position = glm::vec2(-0.55, 0.825);
-	guiText->texts["Line_e3"] = score;
-
-	engine.m_Renderers.emplace_back(gui_renderer);
-	gui_renderer->Init();
-
+GwintGameScene::~GwintGameScene() 
+{
+	quit = true;
+	m_NetworkMsssagesThread.join();
 }
 
 int GwintGameScene::Initialize()
@@ -64,16 +45,7 @@ int GwintGameScene::Initialize()
 	m_Camera->SetPitch(0);
 	m_Camera->UpdateViewMatrix();
 
-	//for (uint x = 0; x < 10; x++)
-	//{
-	//	auto i = rand() % player.cards_in_deck.size();
-	//	player.cards_in_hand.push_back(player.cards_in_deck[i]);
-	//	player.cards_in_hand.push_back(player.cards_in_deck[i]);
-
-	//	player.cards_in_hand.push_back(player.cards_in_deck[i]);
-	//	player.cards_in_hand.push_back(player.cards_in_deck[i]);
-	//	player.cards_in_deck.erase(player.cards_in_deck.begin() + i);
-	//}
+	m_NetworkMsssagesThread = std::thread(&GwintGameScene::NetworkCheckMessages, this);
 
 	return 0;
 }
@@ -83,77 +55,16 @@ int GwintGameScene::Update()
 	if (renderer == nullptr)
 		return 0;
 
+	NetworkProcerdure();
+
 	renderer->cards.clear();
 
-	//system("cls");
-	//std::cout << "My : \n";
-	int player_sum = 0, enemy_sum = 0;
-	for (auto& line : GameLines)
-		player_sum += line.second.CalculateStrengthLine();
-	for (auto& line : EnemyGameLines)
-		enemy_sum += line.second.CalculateStrengthLine();
+	RenderScores();
 
-
-	guiText->texts["Sum_p1"].text = std::to_string(player_sum);
-	guiText->texts["Sum_e1"].text = std::to_string(enemy_sum);
-
-
-	guiText->texts["Line_p1"].text = std::to_string(GameLines[LineTypes::CLOSE_COMBAT].strength);
-	guiText->texts["Line_p2"].text = std::to_string(GameLines[LineTypes::ARCHEER].strength);
-	guiText->texts["Line_p3"].text = std::to_string(GameLines[LineTypes::BALIST].strength);
-
-	guiText->texts["Line_e1"].text = std::to_string(EnemyGameLines[LineTypes::CLOSE_COMBAT].strength);
-	guiText->texts["Line_e2"].text = std::to_string(EnemyGameLines[LineTypes::ARCHEER].strength);
-	guiText->texts["Line_e3"].text = std::to_string(EnemyGameLines[LineTypes::BALIST].strength);
-
-
-	//RenderCardsInHand();
 	RenderLine(GameLines);
-	RenderLine(EnemyGameLines);
+	RenderLine(EnemyGameLines);	
 
-	if (m_State == nullptr)
-		return 0;
-
-	m_State->KeyInputDir();
-
-	auto state_return = m_State->KeyInputRetrun();
-	if (state_return == GameStates::END_TURN)
-	{
-		std::cout << "New State! " << std::endl;
-		std::cout << "Cards in deck : " << player.cards_in_deck.size() << "\n";
-		std::cout << "Enemy Cards in deck : " << enemy.cards_in_deck.size() << "\n";
-
-		auto current_State = m_State->m_GameStateType;
-		m_State.reset();
-
-		if (current_State == GameStates::CHOOSE_CARDS_START)
-		{
-			auto i = rand() % 1;
-
-			if (i == 1)
-			{
-				m_State = std::make_unique<CPlayerMoveState>(player, &engine.m_InputManager, GameLines);
-			}
-			else
-			{
-				m_State = std::make_unique<CEnemyStateMock>(enemy, &engine.m_InputManager, EnemyGameLines);
-			}
-		}
-		else if (current_State == GameStates::PLAYER_TURN)
-		{
-			m_State = std::make_unique<CEnemyStateMock>(enemy, &engine.m_InputManager, EnemyGameLines);
-		}
-		else if (current_State == GameStates::ENEMY_TURN)
-		{
-			m_State = std::make_unique<CPlayerMoveState>(player, &engine.m_InputManager, GameLines);
-		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-	}
-
-	for (const auto& card : m_State->CardRender())
-	{
-		renderer->cards.push_back(card);
-	}
+	CheckState();
 
 	return 0;
 }
@@ -164,7 +75,6 @@ void GwintGameScene::RenderLine(const std::map<LineTypes, GameLine>& line) const
 	{
 		RenderCards(renderer->cards, line.second.GetCards(), table_card_size);
 	}
-
 }
 
 void GwintGameScene::RenderCards(std::list<SCard>& target, const std::vector<SCard>& cards, const glm::vec3 & scale) const
@@ -175,3 +85,498 @@ void GwintGameScene::RenderCards(std::list<SCard>& target, const std::vector<SCa
 		target.back().scale = scale;
 	}
 }
+
+void GwintGameScene::RenderScores()
+{
+	//TotalScorePlayer = TotalScoreEnemy = 0;
+	//for (auto& line : GameLines)
+	//	TotalScorePlayer += line.second.CalculateStrengthLine();
+	//for (auto& line : EnemyGameLines)
+	//	TotalScoreEnemy += line.second.CalculateStrengthLine();
+
+	guiText->texts["Sum_p1"].text = std::to_string(TotalScorePlayer);
+	guiText->texts["Sum_e1"].text = std::to_string(TotalScoreEnemy);
+
+
+	guiText->texts["Line_p1"].text = std::to_string(GameLines[LineTypes::CLOSE_COMBAT].strength);
+	guiText->texts["Line_p2"].text = std::to_string(GameLines[LineTypes::ARCHEER].strength);
+	guiText->texts["Line_p3"].text = std::to_string(GameLines[LineTypes::BALIST].strength);
+
+	guiText->texts["Line_e1"].text = std::to_string(EnemyGameLines[LineTypes::CLOSE_COMBAT].strength);
+	guiText->texts["Line_e2"].text = std::to_string(EnemyGameLines[LineTypes::ARCHEER].strength);
+	guiText->texts["Line_e3"].text = std::to_string(EnemyGameLines[LineTypes::BALIST].strength);
+}
+
+void GwintGameScene::CheckState()
+{
+	if (m_State == nullptr)
+		return;
+
+	m_State->KeyInputDir();
+
+	auto state_return = m_State->KeyInputRetrun();
+
+	if (state_return == GameStates::END_ROUND)
+	{
+		std::cout << "New State! " << std::endl;
+		std::cout << "Cards in deck : " << player.cards_in_deck.size() << "\n";
+		std::cout << "Enemy Cards in deck : " << enemy.cards_in_deck.size() << "\n";
+
+		auto current_State = m_State->m_GameStateType;
+		m_State.reset();
+
+		if (current_State == GameStates::CHOOSE_CARDS_START)
+		{
+			
+		}
+		else if (current_State == GameStates::PLAYER_ROUND)
+		{
+			m_State = std::make_unique<CEnemyState>(player, currentNetworState);
+		}
+		else if (current_State == GameStates::ENEMY_ROUND)
+		{
+			m_State = std::make_unique<CPlayerMoveState>(player, &engine.m_InputManager, GameLines);
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));		
+	}	
+
+	for (const auto& card : m_State->CardRender())
+	{
+		renderer->cards.push_back(card);
+	}
+}
+
+void GwintGameScene::InitGui()
+{
+	CGUIRenderer* gui_renderer = new CGUIRenderer();
+	guiText = new CGuiText("../Data/GUI/consola.ttf", engine.m_Projection.GetWindowSize());
+	gui_renderer->AddElement(guiText);
+
+	SGuiTextElement gui_text;
+	gui_text.isActive = false;
+	gui_text.text = "Test";
+	gui_text.colour = glm::vec3(0, 162.f / 255.f, 232.f / 255.f);
+
+	gui_text.position = glm::vec2(-0.55, -0.0);
+	guiText->texts["Line_p1"] = gui_text;
+	gui_text.position = glm::vec2(-0.55, -0.3);
+	guiText->texts["Line_p2"] = gui_text;
+	gui_text.position = glm::vec2(-0.55, -0.6);
+	guiText->texts["Line_p3"] = gui_text;
+
+	gui_text.position = glm::vec2(-0.75, -0.15);
+	guiText->texts["Sum_p1"] = gui_text;
+
+	gui_text.position = glm::vec2(-0.75, 0.4);
+	guiText->texts["Sum_e1"] = gui_text;
+
+	gui_text.position = glm::vec2(-0.55, 0.25);
+	guiText->texts["Line_e1"] = gui_text;
+	gui_text.position = glm::vec2(-0.55, 0.55);
+	guiText->texts["Line_e2"] = gui_text;
+	gui_text.position = glm::vec2(-0.55, 0.825);
+	guiText->texts["Line_e3"] = gui_text;
+
+	gui_text.position = glm::vec2(-0.3, 0);
+	gui_text.text = "Info Text here";
+	gui_text.isActive = true;
+	guiText->texts["InfoMessage"] = gui_text;
+
+	engine.m_Renderers.emplace_back(gui_renderer);
+	gui_renderer->Init();
+}
+
+void GwintGameScene::ShowScores(bool show)
+{
+	guiText->texts["Line_p1"].isActive = show;
+	guiText->texts["Line_p2"].isActive = show;
+	guiText->texts["Line_p3"].isActive = show;
+	guiText->texts["Sum_p1"].isActive = show;
+	guiText->texts["Sum_e1"].isActive = show;
+	guiText->texts["Line_e1"].isActive = show;
+	guiText->texts["Line_e2"].isActive = show;
+	guiText->texts["Line_e3"].isActive = show;
+}
+
+void GwintGameScene::NetworkCheckMessages()
+{
+	while (!quit)
+	{
+		SDLClientGetway::Instance().CheckIncomingMessage();
+		SDLClientGetway::Instance().CheckComplexMessage();
+	}
+}
+
+void GwintGameScene::NetworkProcerdure()
+{
+	switch (currentNetworState)
+	{
+	case NetworkState::DOWNLOAD_DECKS:
+		NetworkDownloadDeck();
+		break;
+	case NetworkState::RAND_START_CARDS:
+		NetworkGetCardsInHand();
+		break;
+	case NetworkState::SWAP_CARDS:
+		NetworkSwapCards();
+		break;
+	case NetworkState::WAIT_FOR_START:
+		NetworkWaitForStart();
+		break;
+	case NetworkState::PLAYER_TURN:
+		NetworkPlayerState();		
+		break;
+	case NetworkState::ENEMY_TURN:
+		NetworEnemyState();
+		break;
+	}
+}
+
+void GwintGameScene::NetworkDownloadDeck()
+{
+	guiText->texts["InfoMessage"].text = "Waiting for deck...";
+
+	std::string deck;
+
+	auto response = SDLClientGetway::Instance().GetMessage();
+	if (!response.empty())
+	{
+		std::cout << response << std::endl;
+
+		auto set = GameCards::Instance().LoadCards(DeckType::NORTH, response);
+		if (set)
+		{
+			SDLClientGetway::Instance().SendMessage("DECK_OK");
+
+			GameCards::Instance().LoadTexturesInCards(engine.m_Scene->GetResourceManager(), true);
+
+			for (const auto& decks : GameCards::Instance().GetCards())
+			{
+				for (const auto& card : decks.second)
+				{
+					player.cards_in_deck.push_back(card);
+					//player.cards_in_hand.push_back(card);
+				}
+			}
+			currentNetworState = NetworkState::RAND_START_CARDS;
+			SDLClientGetway::Instance().ClearMessagesQueue();
+		}
+	}	
+}
+void GwintGameScene::NetworkGetCardsInHand()
+{
+	guiText->texts["InfoMessage"].text = "Waiting for rand cards...";
+
+	auto msg = SDLClientGetway::Instance().GetMessage();
+
+	if (msg.empty())
+		return;
+
+	if (msg == "BEGIN_XML_MESSAGE")
+		return;
+
+	if (msg == "END_XML_MESSAGE")
+	{
+		SDLClientGetway::Instance().SendMessage("HAND_CARDS_OK");
+		SDLClientGetway::Instance().ClearMessagesQueue();
+		currentNetworState = NetworkState::SWAP_CARDS;
+		return;
+	}
+
+	Log(msg);
+
+	GwentMessages::SwapCardMessage card_msg;
+	if (card_msg.Serialized(msg))
+	{
+		SCard card;
+		int index_to_erase = 0;
+		for (const auto& c : player.cards_in_deck)
+		{
+			if (c.name == card_msg.card_name)
+			{
+				card = c;
+				break;
+			}
+			index_to_erase++;
+		}
+
+		//auto card = player.cards_in_deck[card_msg.index];
+	
+		if (card.name == card_msg.card_name)
+		{
+			player.cards_in_hand.push_back(card);
+			player.cards_in_deck.erase(player.cards_in_deck.begin() + index_to_erase);
+		}
+		else
+		{
+			Error("Founded card in deck is diffrent than in message. " + card.name + " != " + card_msg.card_name);
+		}
+	}
+}
+void GwintGameScene::NetworkSwapCards()
+{
+	guiText->texts["InfoMessage"].isActive = false;
+
+	auto message = SDLClientGetway::Instance().GetMessage();
+	if (!message.empty())
+	{
+		GwentMessages::SwapCardMessage response;
+		if (response.Serialized(message))
+		{
+			Log("Get response : " + message);
+			if (response.type == GwentMessages::SwapCardMessage::MessageType::RESPONSE)
+			{
+				auto swaped_card = player.cards_in_deck[response.index];
+				auto card = player.cards_in_deck[response.prev_index];
+				player.cards_in_hand[response.prev_index] = swaped_card;
+				player.cards_in_deck[response.index] = card;
+				player.swaped_cards++;
+				SDLClientGetway::Instance().SendMessage("SWAP_CARD_OK");
+			}
+			else
+			{
+				Log("Swap card : Except response message but income request msg.");
+			}
+		}
+		else if (message == "END_SWAPING_CARDS")
+		{
+			currentNetworState = NetworkState::WAIT_FOR_START;
+			SDLClientGetway::Instance().ClearMessagesQueue();
+			ShowScores(true);
+			Log("Swaped cards is end.");
+			Log("Wait for start.");
+
+			m_State = std::make_unique<CEnemyState>(player, currentNetworState);
+		}
+		else
+		{
+			Log("Swap card : Except response message but income other type message.");
+		}
+	}
+
+}
+void GwintGameScene::NetworkWaitForStart()
+{
+	guiText->texts["InfoMessage"].isActive = true;
+	guiText->texts["InfoMessage"].text = "Waiting for start Game...";
+
+	auto msg = SDLClientGetway::Instance().GetMessage();
+
+	if (msg.empty())
+		return;
+
+	Log("Recv msg : \n" + msg);
+
+	GwentMessages::StartGameMessage start_msg;
+	if (start_msg.Serialized(msg))
+	{
+		if (start_msg.playerToStart == GwentMessages::Player::PLAYER)
+		{
+			currentNetworState = NetworkState::PLAYER_TURN;
+			SDLClientGetway::Instance().ClearMessagesQueue();
+			m_State = std::make_unique<CPlayerMoveState>(player, &engine.m_InputManager, GameLines);
+		}
+		else
+		{
+			SDLClientGetway::Instance().ClearMessagesQueue();
+			currentNetworState = NetworkState::ENEMY_TURN;
+			m_State = std::make_unique<CEnemyState>(player, currentNetworState);
+		}
+	}
+}
+
+
+
+void GwintGameScene::NetworEnemyState()
+{
+	guiText->texts["InfoMessage"].isActive = true;
+	guiText->texts["InfoMessage"].text = "Waiting for enemy move...";
+
+	auto msg = SDLClientGetway::Instance().GetMessage();
+
+	GwentMessages::PushCardMessage	push_card_msg;
+	GwentMessages::ScoreMessage		score_msg;
+
+	if (!msg.empty())
+	{
+		Log("Recv : " + msg);
+		if (msg == "START_MOVE")
+		{
+			m_State = std::make_unique<CPlayerMoveState>(player, &engine.m_InputManager, GameLines);
+			currentNetworState = NetworkState::PLAYER_TURN;
+		}
+		else if (push_card_msg.Serialized(msg))
+		{
+			Log("Enemy push card msg.\n" + msg);
+			Log("Card name : " + push_card_msg.card_name);
+
+			if (!push_card_msg.texturePath.empty())
+			{
+				SCard card;
+				card.texture_path = push_card_msg.texturePath;
+				card.name = push_card_msg.card_name;
+				card.texture = m_ResourceManager.GetTextureLaoder().LoadTextureImmediately(push_card_msg.texturePath);
+				EnemyGameLines[static_cast<LineTypes>(push_card_msg.type)].AddCard(card);
+			}
+			
+
+			//auto card = enemy.cards_in_hand[push_card_msg.index];
+			//if (card.name == push_card_msg.card_name)
+			//{
+			//	EnemyGameLines[card.type].AddCard(card);
+			//	//enemy.cards_in_hand.erase(enemy.cards_in_hand.begin() + push_card_msg.index);
+			//}
+			//else
+			//{
+			//	Error("Enemy push card network msg error.");
+			//}
+		}
+		else if (score_msg.Serialized(msg))
+		{
+			Log("Score update.\n" + msg);
+
+			TotalScoreEnemy = score_msg.scoreEnemy[GwentMessages::ScoreMessage::Total];
+			TotalScorePlayer = score_msg.scorePlayer[GwentMessages::ScoreMessage::Total];
+
+			GameLines[LineTypes::CLOSE_COMBAT].strength = score_msg.scorePlayer[GwentMessages::ScoreMessage::Line1];
+			GameLines[LineTypes::ARCHEER].strength = score_msg.scorePlayer[GwentMessages::ScoreMessage::Line2];
+			GameLines[LineTypes::BALIST].strength = score_msg.scorePlayer[GwentMessages::ScoreMessage::Line3];
+
+			EnemyGameLines[LineTypes::CLOSE_COMBAT].strength = score_msg.scoreEnemy[GwentMessages::ScoreMessage::Line1];
+			EnemyGameLines[LineTypes::ARCHEER].strength = score_msg.scoreEnemy[GwentMessages::ScoreMessage::Line2];
+			EnemyGameLines[LineTypes::BALIST].strength = score_msg.scoreEnemy[GwentMessages::ScoreMessage::Line3];
+		}
+	}
+}
+void GwintGameScene::NetworkPlayerState()
+{
+	guiText->texts["InfoMessage"].isActive = false;
+
+	auto message = SDLClientGetway::Instance().GetMessage();
+
+	if (!message.empty())
+	{
+		Log("Get message in player state: \n" + message);
+
+		if (message == "END_MOVE")
+		{
+			m_State = std::make_unique<CEnemyState>(player, currentNetworState);
+			currentNetworState = NetworkState::ENEMY_TURN;
+			return;
+		}
+
+		GwentMessages::PushCardMessage response;
+		GwentMessages::ScoreMessage	   score_msg;
+
+		if (response.Serialized(message))
+		{
+			Log("Serialized response : " + message);
+
+			SCard card;
+			int index = -1;
+			int i = 0;
+			for (const auto& c : player.cards_in_hand)
+			{
+				if (c.name == response.card_name)
+				{
+					card = c;
+					index = i;
+					break;
+				}
+				i++;
+			}
+			if (index >= 0)
+			{
+				GameLines[card.type].AddCard(card);
+				player.cards_in_hand.erase(player.cards_in_hand.begin() + index);
+				SDLClientGetway::Instance().SendMessage("PUSH_CARD_OK");
+			}			
+		}
+		else if (score_msg.Serialized(message))
+		{
+			Log("Score update.\n" + message);
+
+			TotalScoreEnemy = score_msg.scoreEnemy[GwentMessages::ScoreMessage::Total];
+			TotalScorePlayer = score_msg.scorePlayer[GwentMessages::ScoreMessage::Total];
+
+			GameLines[LineTypes::CLOSE_COMBAT].strength = score_msg.scorePlayer[GwentMessages::ScoreMessage::Line1];
+			GameLines[LineTypes::ARCHEER].strength = score_msg.scorePlayer[GwentMessages::ScoreMessage::Line2];
+			GameLines[LineTypes::BALIST].strength = score_msg.scorePlayer[GwentMessages::ScoreMessage::Line3];
+
+			EnemyGameLines[LineTypes::CLOSE_COMBAT].strength = score_msg.scoreEnemy[GwentMessages::ScoreMessage::Line1];
+			EnemyGameLines[LineTypes::ARCHEER].strength = score_msg.scoreEnemy[GwentMessages::ScoreMessage::Line2];
+			EnemyGameLines[LineTypes::BALIST].strength = score_msg.scoreEnemy[GwentMessages::ScoreMessage::Line3];
+		}
+		else
+		{
+			Log("Push card : Except response message but income other type message: \n" + message);
+		}
+	}
+	
+}
+//
+//void GwintGameScene::NetworkWaitForStart()
+//{
+//	std::string msg;
+//	std::cout << "Waiting for start game..." << std::endl;
+//	while (1)
+//	{
+//		auto response = SDLClientGetway::Instance().GetMessage(msg);
+//		if (response)
+//		{
+//			std::cout << msg << std::endl;
+//
+//			if (msg == "START_GAME")
+//				break;
+//		}
+//	}
+//}
+//
+//void GwintGameScene::NetworkGetCardsInHand()
+//{
+//	bool wait_for_cards = true;
+//	while (wait_for_cards)
+//	{
+//		std::string message;
+//		if (SDLClientGetway::Instance().GetSingleMessage(message))
+//		{
+//			auto pos = message.find("BEGIN_XML_MESSAGE");
+//			if (pos != std::string::npos)
+//			{
+//				message = message.substr(pos);
+//
+//				while (1)
+//				{
+//					Log(message);
+//
+//					if (!SDLClientGetway::Instance().GetSingleMessage(message))
+//						continue;
+//
+//					Log("Dwonload cards in hand : " + message);
+//
+//					if (message == "END_XML_MESSAGE")
+//					{
+//						SDLClientGetway::Instance().SendMessage("HAND_CARDS_OK");
+//						wait_for_cards = false;
+//						break;
+//					}
+//					GwentMessages::SwapCardMessage msg;
+//					if (msg.Serialized(message))
+//					{
+//						auto card = scene->player.cards_in_deck[msg.index];
+//
+//						if (card.name == msg.card_name)
+//						{
+//							scene->player.cards_in_hand.push_back(card);
+//							scene->player.cards_in_deck.erase(scene->player.cards_in_deck.begin() + msg.index);
+//						}
+//						else
+//						{
+//							Error("Founded card in deck is diffrent than in message. " + card.name + " != " + msg.card_name);
+//						}
+//					}
+//				}
+//			}
+//		}
+//	}
+//}
