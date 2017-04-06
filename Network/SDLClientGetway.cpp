@@ -2,6 +2,7 @@
 #include "NetworkUtils.h"
 #include <Utils/Types.h>
 #include <Debug_/Log.h>
+#include <Utils/Utils.h>
 #include <algorithm>
 
 SDLClientGetway & SDLClientGetway::Instance()
@@ -36,6 +37,10 @@ void SDLClientGetway::Init()
 		exit(-1); // Quit!
 	}
 	socketSet = SDLNet_AllocSocketSet(1);
+
+	serverName = Utils::ReadFile("../Data/server.conf");	
+
+	Log("Server : " + serverName);
 
 	int hostResolved = SDLNet_ResolveHost(&serverIP, serverName.c_str(), PORT);
 	const char* host = SDLNet_ResolveIP(&serverIP);

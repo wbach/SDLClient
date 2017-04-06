@@ -31,6 +31,13 @@ public:
 	virtual void KeyInputConfirm() override {}
 	virtual GameStates::State KeyInputRetrun() override
 	{
+		
+		if (input_manager->GetKeyDown(KeyCodes::SPACE))
+		{
+			SDLClientGetway::Instance().SendMessage("PLAYER_PASS");
+			return GameStates::NONE;
+		}
+
 		if (input_manager->GetKeyDown(KeyCodes::ENTER))
 		{
 			auto index = selected_nr*-1;

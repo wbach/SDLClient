@@ -22,16 +22,15 @@ public:
 			TakeSingleCard();
 		}
 	}
-	bool TakeSingleCard()
+	SCard TakeSingleCard()
 	{
 		if (cards_in_deck.empty())
-			return false;
+			return SCard();
 
 		auto i = rand() % cards_in_deck.size();
 		cards_in_hand.push_back(cards_in_deck[i]);
 		cards_in_deck.erase(cards_in_deck.begin() + i);
 		indexes.push_back(i);
-		return true;
 	}
 private:
 	

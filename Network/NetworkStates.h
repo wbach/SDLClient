@@ -7,5 +7,6 @@ enum class NetworkState
 	SWAP_CARDS,
 	WAIT_FOR_START,
 	PLAYER_TURN,
-	ENEMY_TURN
+	ENEMY_TURN,
+	END_GAME
 };

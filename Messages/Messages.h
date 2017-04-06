@@ -170,10 +170,12 @@ namespace GwentMessages
 	{
 		Player player;
 		std::string card_name;		
-		uint index;
+		uint index = 0;
 
 		std::string texturePath; //for enemy
-		uint type;
+		uint type = 0;
+		uint cardsLeftInHand = 0;
+		uint cardsLeftInDeck = 0;
 
 		bool operator==(const PushCardMessage& m)
 		{
@@ -190,12 +192,16 @@ namespace GwentMessages
 			auto player_node = document.allocate_node(rapidxml::node_element, "player", document.allocate_string(std::to_string(p).c_str()));
 			auto texture_node = document.allocate_node(rapidxml::node_element, "texturePath", document.allocate_string(texturePath.c_str()));
 			auto type_node = document.allocate_node(rapidxml::node_element, "lineType", document.allocate_string(std::to_string(type).c_str()));
+			auto left_in_deck_node = document.allocate_node(rapidxml::node_element, "leftInDeck", document.allocate_string(std::to_string(cardsLeftInDeck).c_str()));
+			auto left_in_hand_node = document.allocate_node(rapidxml::node_element, "leftInHand", document.allocate_string(std::to_string(cardsLeftInHand).c_str()));
 
 			root->append_node(index_node);
 			root->append_node(name_node);
 			root->append_node(player_node);
 			root->append_node(texture_node);
 			root->append_node(type_node);
+			root->append_node(left_in_deck_node);
+			root->append_node(left_in_hand_node);
 
 			document.append_node(root);
 
@@ -256,6 +262,14 @@ namespace GwentMessages
 							{
 								type = std::stoi(value);
 							}
+							else if (name == "leftInDeck")
+							{
+								cardsLeftInDeck = std::stoi(value);
+							}
+							else if (name == "leftInHand")
+							{
+								cardsLeftInHand = std::stoi(value);
+							}
 						}
 						document.clear();
 						return true;
@@ -288,6 +302,8 @@ namespace GwentMessages
 		int scorePlayer[ScoreType::Count];
 		int scoreEnemy[ScoreType::Count];
 
+		uint wonRounds[2];
+
 		ScoreMessage()
 		{
 			for (uint x = 0; x < Count; ++x)
@@ -295,6 +311,9 @@ namespace GwentMessages
 				scorePlayer[x] = 0;
 				scoreEnemy[x] = 0;
 			}
+			wonRounds[0] = 0;
+			wonRounds[1] = 0;
+
 		}
 
 		std::string ToString()
@@ -308,22 +327,26 @@ namespace GwentMessages
 			auto node_line2 = document.allocate_node(rapidxml::node_element, "line_2", document.allocate_string(std::to_string(scorePlayer[Line2]).c_str()));
 			auto node_line3 = document.allocate_node(rapidxml::node_element, "line_3", document.allocate_string(std::to_string(scorePlayer[Line3]).c_str()));
 			auto node_lineT = document.allocate_node(rapidxml::node_element, "total", document.allocate_string(std::to_string(scorePlayer[Total]).c_str()));
+			auto node_wond_rounds = document.allocate_node(rapidxml::node_element, "won_rounds", document.allocate_string(std::to_string(wonRounds[0]).c_str()));
 
 			player_node->append_node(node_line1);
 			player_node->append_node(node_line2);
 			player_node->append_node(node_line3);
 			player_node->append_node(node_lineT);
+			player_node->append_node(node_wond_rounds);
 
 			auto enemy_node = document.allocate_node(rapidxml::node_element, "enemy");
 			auto node_eline1 = document.allocate_node(rapidxml::node_element, "line_1", document.allocate_string(std::to_string(scoreEnemy[Line1]).c_str()));
 			auto node_eline2 = document.allocate_node(rapidxml::node_element, "line_2", document.allocate_string(std::to_string(scoreEnemy[Line2]).c_str()));
 			auto node_eline3 = document.allocate_node(rapidxml::node_element, "line_3", document.allocate_string(std::to_string(scoreEnemy[Line3]).c_str()));
 			auto node_elineT = document.allocate_node(rapidxml::node_element, "total", document.allocate_string(std::to_string(scoreEnemy[Total]).c_str()));
+			auto node_ewond_rounds = document.allocate_node(rapidxml::node_element, "won_rounds", document.allocate_string(std::to_string(wonRounds[1]).c_str()));
 
 			enemy_node->append_node(node_eline1);
 			enemy_node->append_node(node_eline2);
 			enemy_node->append_node(node_eline3);
 			enemy_node->append_node(node_elineT);
+			enemy_node->append_node(node_ewond_rounds);
 
 			root->append_node(player_node);
 			root->append_node(enemy_node);
@@ -337,7 +360,7 @@ namespace GwentMessages
 			return message.str();
 		}
 
-		void SerializePlayerScore(rapidxml::xml_node<char>* node, int (&scorePlayer)[ScoreType::Count])
+		void SerializePlayerScore(rapidxml::xml_node<char>* node, int (&scorePlayer)[ScoreType::Count], uint player_index)
 		{
 			for (auto snode = node->first_node(); snode; snode = snode->next_sibling())
 			{
@@ -359,6 +382,10 @@ namespace GwentMessages
 				else if (name == "total")
 				{
 					scorePlayer[Total] = std::stoi(value);
+				}
+				else if (name == "won_rounds")
+				{
+					wonRounds[player_index] = std::stoi(value);
 				}
 			}
 		}
@@ -388,11 +415,11 @@ namespace GwentMessages
 
 							if (name == "player")
 							{
-								SerializePlayerScore(snode, scorePlayer);
+								SerializePlayerScore(snode, scorePlayer, 0);
 							}
 							else if (name == "enemy")
 							{
-								SerializePlayerScore(snode, scoreEnemy);
+								SerializePlayerScore(snode, scoreEnemy, 1);
 							}						
 						}
 						return true;

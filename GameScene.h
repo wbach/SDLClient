@@ -35,6 +35,12 @@ private:
 	void CheckState();
 	void InitGui();
 	void ShowScores(bool show);	
+	void ClearGameLines();
+	void EndGame();
+
+	uint ps_cardsInHand, ps_cardInDeck, es_CardsInHand, es_cardInDeck;
+	uint network_round_wons, network_eround_wons;
+	std::string end_text;
 
 	CGuiText* guiText;
 	CEngine& engine;

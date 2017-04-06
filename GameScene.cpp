@@ -105,11 +105,19 @@ void GwintGameScene::RenderScores()
 	guiText->texts["Line_e1"].text = std::to_string(EnemyGameLines[LineTypes::CLOSE_COMBAT].strength);
 	guiText->texts["Line_e2"].text = std::to_string(EnemyGameLines[LineTypes::ARCHEER].strength);
 	guiText->texts["Line_e3"].text = std::to_string(EnemyGameLines[LineTypes::BALIST].strength);
+
+	guiText->texts["PWon"].text = "Wons : " + std::to_string(network_round_wons);
+	guiText->texts["EWon"].text = "Wons : " + std::to_string(network_eround_wons);
+
+	guiText->texts["PlayerHandCardsCount"].text = "Cards: " + std::to_string(ps_cardsInHand);
+	guiText->texts["PlayerDeckCardsCount"].text = "Deck: " + std::to_string(ps_cardInDeck);
+	guiText->texts["EnemyHandCardsCount"].text = "Cards: " + std::to_string(es_CardsInHand);
+	guiText->texts["EnemyDeckCardsCount"].text = "Deck: " + std::to_string(es_cardInDeck);
 }
 
 void GwintGameScene::CheckState()
 {
-	if (m_State == nullptr)
+	if (m_State == nullptr ||  currentNetworState == NetworkState::END_GAME)
 		return;
 
 	m_State->KeyInputDir();
@@ -177,6 +185,38 @@ void GwintGameScene::InitGui()
 	gui_text.position = glm::vec2(-0.55, 0.825);
 	guiText->texts["Line_e3"] = gui_text;
 
+	gui_text.position = glm::vec2(-0.95, -0.75);
+	gui_text.text = "PlayerHandCardsCount";
+	guiText->texts["PlayerHandCardsCount"] = gui_text;
+
+	gui_text.position = glm::vec2(0.70, -0.825);
+	gui_text.text = "PlayerDeckCardsCount";
+	guiText->texts["PlayerDeckCardsCount"] = gui_text;
+
+	gui_text.position = glm::vec2(0.70, -0.625);
+	gui_text.text = "Won : 0";
+	guiText->texts["PWon"] = gui_text;
+
+	gui_text.position = glm::vec2(-0.95, 0.75);
+	gui_text.text = "EnemyHandCardsCount";
+	guiText->texts["EnemyHandCardsCount"] = gui_text;
+
+	gui_text.position = glm::vec2(0.7, 0.35);
+	gui_text.text = "Won : 0";
+	guiText->texts["EWon"] = gui_text;
+
+	gui_text.position = glm::vec2(0.7, 0.825);
+	gui_text.text = "EnemyDeckCardsCount";
+	guiText->texts["EnemyDeckCardsCount"] = gui_text;
+
+	gui_text.position = glm::vec2(-0.3, -0.25);
+	gui_text.text = "Pass";
+	guiText->texts["PlayerPass"] = gui_text;
+
+	gui_text.position = glm::vec2(-0.3, 0.25);
+	gui_text.text = "Enemy Pass";
+	guiText->texts["EnemyPass"] = gui_text;
+
 	gui_text.position = glm::vec2(-0.3, 0);
 	gui_text.text = "Info Text here";
 	gui_text.isActive = true;
@@ -196,6 +236,47 @@ void GwintGameScene::ShowScores(bool show)
 	guiText->texts["Line_e1"].isActive = show;
 	guiText->texts["Line_e2"].isActive = show;
 	guiText->texts["Line_e3"].isActive = show;
+
+	guiText->texts["PlayerHandCardsCount"].isActive = show;
+	guiText->texts["PlayerDeckCardsCount"].isActive = show;
+	guiText->texts["EnemyHandCardsCount"].isActive = show;
+	guiText->texts["EnemyDeckCardsCount"].isActive = show;
+
+	guiText->texts["PWon"].isActive = show;
+	guiText->texts["EWon"].isActive = show;
+}
+
+void GwintGameScene::ClearGameLines()
+{
+	GameLines.clear();
+	EnemyGameLines.clear();
+
+	GameLines =
+	{
+		{ LineTypes::CLOSE_COMBAT, GameLine(glm::vec3(-.225f, 0.015, .63f)) },
+		{ LineTypes::ARCHEER, GameLine(glm::vec3(-.225f, -0.225, .63f)) },
+		{ LineTypes::BALIST, GameLine(glm::vec3(-.225f, -0.48, .63f)) }
+	};
+
+	EnemyGameLines =
+	{
+		{ LineTypes::CLOSE_COMBAT, GameLine(glm::vec3(-.225f, 0.26, .63f)) },
+		{ LineTypes::ARCHEER, GameLine(glm::vec3(-.225f, 0.51, .63f)) },
+		{ LineTypes::BALIST, GameLine(glm::vec3(-.225f, 0.76, .63f)) }
+	};
+	;
+}
+
+void GwintGameScene::EndGame()
+{
+	guiText->texts["InfoMessage"].text = end_text;
+
+	auto msg = SDLClientGetway::Instance().GetMessage();
+
+	if (msg.empty())
+		return;
+
+
 }
 
 void GwintGameScene::NetworkCheckMessages()
@@ -228,6 +309,9 @@ void GwintGameScene::NetworkProcerdure()
 		break;
 	case NetworkState::ENEMY_TURN:
 		NetworEnemyState();
+		break;
+	case NetworkState::END_GAME:
+		EndGame();
 		break;
 	}
 }
@@ -360,6 +444,11 @@ void GwintGameScene::NetworkWaitForStart()
 	guiText->texts["InfoMessage"].isActive = true;
 	guiText->texts["InfoMessage"].text = "Waiting for start Game...";
 
+	guiText->texts["EnemyPass"].isActive = false;
+	guiText->texts["PlayerPass"].isActive = false;
+
+	ClearGameLines();
+
 	auto msg = SDLClientGetway::Instance().GetMessage();
 
 	if (msg.empty())
@@ -405,6 +494,31 @@ void GwintGameScene::NetworEnemyState()
 			m_State = std::make_unique<CPlayerMoveState>(player, &engine.m_InputManager, GameLines);
 			currentNetworState = NetworkState::PLAYER_TURN;
 		}
+		else if(msg == "ENEMY_PASS")
+		{
+			m_State = std::make_unique<CPlayerMoveState>(player, &engine.m_InputManager, GameLines);
+			currentNetworState = NetworkState::PLAYER_TURN;
+			guiText->texts["EnemyPass"].isActive = true;
+		}
+		else if (msg == "END_ROUND")
+		{
+			currentNetworState = NetworkState::WAIT_FOR_START;
+			return;
+		}
+		else if (msg == "YOU_WON")
+		{
+			end_text = "YOU WIN !!!!!!!!!";
+			currentNetworState = NetworkState::END_GAME;
+			m_State = std::make_unique<CChooseCardState>(player, &engine.m_InputManager, GameLines);
+			return;
+		}
+		else if (msg == "YOU_LOSE")
+		{
+			end_text = "YOU LOSE ;(";			
+			currentNetworState = NetworkState::END_GAME;
+			m_State = std::make_unique<CChooseCardState>(player, &engine.m_InputManager, GameLines);
+			return;
+		}
 		else if (push_card_msg.Serialized(msg))
 		{
 			Log("Enemy push card msg.\n" + msg);
@@ -417,6 +531,10 @@ void GwintGameScene::NetworEnemyState()
 				card.name = push_card_msg.card_name;
 				card.texture = m_ResourceManager.GetTextureLaoder().LoadTextureImmediately(push_card_msg.texturePath);
 				EnemyGameLines[static_cast<LineTypes>(push_card_msg.type)].AddCard(card);
+
+				es_CardsInHand = push_card_msg.cardsLeftInHand;
+				es_cardInDeck = push_card_msg.cardsLeftInDeck;
+
 			}
 			
 
@@ -445,6 +563,9 @@ void GwintGameScene::NetworEnemyState()
 			EnemyGameLines[LineTypes::CLOSE_COMBAT].strength = score_msg.scoreEnemy[GwentMessages::ScoreMessage::Line1];
 			EnemyGameLines[LineTypes::ARCHEER].strength = score_msg.scoreEnemy[GwentMessages::ScoreMessage::Line2];
 			EnemyGameLines[LineTypes::BALIST].strength = score_msg.scoreEnemy[GwentMessages::ScoreMessage::Line3];
+
+			network_round_wons = score_msg.wonRounds[0];
+			network_eround_wons = score_msg.wonRounds[1];
 		}
 	}
 }
@@ -462,6 +583,31 @@ void GwintGameScene::NetworkPlayerState()
 		{
 			m_State = std::make_unique<CEnemyState>(player, currentNetworState);
 			currentNetworState = NetworkState::ENEMY_TURN;
+			return;
+		}
+		else if (message == "PASS_OK")
+		{
+			m_State = std::make_unique<CEnemyState>(player, currentNetworState);
+			currentNetworState = NetworkState::ENEMY_TURN;
+			guiText->texts["PlayerPass"].isActive = true;
+		}
+		else if (message == "END_ROUND")
+		{
+			currentNetworState = NetworkState::WAIT_FOR_START;
+			return;
+		}
+		else if (message == "YOU_WON")
+		{
+			end_text = "YOU WIN !!!!!!!!!";
+			currentNetworState = NetworkState::END_GAME;
+			m_State = std::make_unique<CChooseCardState>(player, &engine.m_InputManager, GameLines);
+			return;
+		}
+		else if (message == "YOU_LOSE")
+		{
+			end_text = "YOU LOSE ;(";
+			currentNetworState = NetworkState::END_GAME;
+			m_State = std::make_unique<CChooseCardState>(player, &engine.m_InputManager, GameLines);
 			return;
 		}
 
@@ -490,6 +636,8 @@ void GwintGameScene::NetworkPlayerState()
 				GameLines[card.type].AddCard(card);
 				player.cards_in_hand.erase(player.cards_in_hand.begin() + index);
 				SDLClientGetway::Instance().SendMessage("PUSH_CARD_OK");
+				ps_cardsInHand = response.cardsLeftInHand;
+				ps_cardInDeck = response.cardsLeftInDeck;
 			}			
 		}
 		else if (score_msg.Serialized(message))
@@ -506,6 +654,9 @@ void GwintGameScene::NetworkPlayerState()
 			EnemyGameLines[LineTypes::CLOSE_COMBAT].strength = score_msg.scoreEnemy[GwentMessages::ScoreMessage::Line1];
 			EnemyGameLines[LineTypes::ARCHEER].strength = score_msg.scoreEnemy[GwentMessages::ScoreMessage::Line2];
 			EnemyGameLines[LineTypes::BALIST].strength = score_msg.scoreEnemy[GwentMessages::ScoreMessage::Line3];
+
+			network_round_wons = score_msg.wonRounds[0];
+			network_eround_wons = score_msg.wonRounds[1];
 		}
 		else
 		{
