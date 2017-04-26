@@ -37,6 +37,20 @@ public:
 		}		
 	}
 
+
+	//enum class Skills
+	//{
+	//v	MoraleBoost, // daje wszystkim +1 oprocz siebie
+	//	ScorchALL, // niszczy najsilniejsza na stole
+	//	Scorch, // niszczy najsilniejsza w swojej lini
+	//	Spy, // szpieg
+	//v	Hero, // efekty nie dizalaja
+	//v	TightBond, // podwojone gdy obok jest 2 karta
+	//	Medic, // ozywianie
+	//	Agile, // archer/ close combat
+	//	Muster //Przywo³anie z tali 
+	//};
+
 	int CalculateStrengthLine()
 	{
 		strength = 0;
@@ -48,8 +62,22 @@ public:
 				strength += card.strength;
 				continue;
 			}
+			int s = card.strength;
 
-			int s = card.strength + morale_boost;
+			if (card.FindSkill(Skills::TightBond))
+			{
+				int multiple = 0;
+				for (const auto& c : cards)
+				{
+					if (card.name == c.name)
+					{
+						multiple++;
+					}
+				}
+				s *= multiple;
+			}
+
+			s += morale_boost;
 
 			if (card.FindSkill(Skills::MoraleBoost))
 			{
